@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HLS Player with Plyr</title>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+</head>
+<body>
+   
+    <div style="width:100%; height: auto">
+        <video preload="none" id="video" autoplay controls crossorigin></video>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Get the video URL from the query parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoUrl = urlParams.get('video');
+
+            if (!videoUrl) {
+                document.body.innerHTML = "<h2>Video URL missing in query parameter</h2>";
+            } else {
+                const video = document.getElementById('video');
+                const defaultOptions = {
+                    controls: [
+                        'play-large',
+                        'play',
+                        'progress',
+                        'duration',
+                        'live',
+                        'mute',
+                        'settings',
+                        'pip',
+                        'airplay',
+                        'fullscreen',
+                    ]
+                };
+
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hls.loadSource(videoUrl);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        new Plyr(video, defaultOptions);
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = videoUrl;
+                    new Plyr(video, defaultOptions);
+                } else {
+                    document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
+                }
+            }
+        });
+    </script>
+</body>
+</html>
