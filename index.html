@@ -5,10 +5,22 @@
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <style>
+        .video-container {
+            width: 95%;
+            height: auto;
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
    <center>
-    <div style="width:95%; height: auto">
+    <div class="video-container">
         <video preload="none" id="video" autoplay controls crossorigin></video>
     </div>
     </center>
@@ -41,7 +53,6 @@
                     const hls = new Hls();
                     hls.loadSource(videoUrl);
                     hls.attachMedia(video);
-
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
                         const availableQualities = hls.levels.map(level => level.height);
 
