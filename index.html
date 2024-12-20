@@ -7,37 +7,22 @@
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <style>
         .video-container {
-            width: 100%;
-            height: auto;
-        }
-
-        video {
-            width: 100%;
+            width: 95%;
             height: auto;
         }
 
         @media (max-width: 768px) {
             .video-container {
                 width: 100%;
-                height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-
-            video {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
             }
         }
     </style>
 </head>
 <body>
-    <center>
-        <div class="video-container">
-            <video preload="none" id="video" autoplay controls crossorigin></video>
-        </div>
+   <center>
+    <div class="video-container">
+        <video preload="none" id="video" autoplay controls crossorigin></video>
+    </div>
     </center>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -79,12 +64,16 @@
                         };
 
                         const player = new Plyr(video, defaultOptions);
-                        attachFullscreenListener(player);
+
+                        // Add fullscreen landscape orientation
+                        addFullscreenOrientationHandler(player);
                     });
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                     video.src = videoUrl;
                     const player = new Plyr(video, defaultOptions);
-                    attachFullscreenListener(player);
+
+                    // Add fullscreen landscape orientation
+                    addFullscreenOrientationHandler(player);
                 } else {
                     document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
                 }
@@ -103,18 +92,16 @@
             }
         }
 
-        // Ensure landscape mode on fullscreen
-        function attachFullscreenListener(player) {
-            const video = player.elements.container;
-            video.addEventListener('enterfullscreen', () => {
+        function addFullscreenOrientationHandler(player) {
+            player.on('enterfullscreen', () => {
                 if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch((err) => {
-                        console.error('Failed to lock orientation:', err.message);
+                    screen.orientation.lock('landscape').catch(err => {
+                        console.warn('Screen orientation lock failed:', err);
                     });
                 }
             });
 
-            video.addEventListener('exitfullscreen', () => {
+            player.on('exitfullscreen', () => {
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
                 }
@@ -140,10 +127,5 @@
             <button id="joinTelegramButton" style="background-color: #fff; color: #0074d9; border: 2px solid #0074d9; padding: 5px 10px;">Join Telegram</button>
         </a>
     </div>
-    <br>
-   <div>
-       <script async="async" data-cfasync="false" src="//carryglanced.com/2346ffc02acfb9eb4451708a5df9f609/invoke.js"></script>
-<div id="container-2346ffc02acfb9eb4451708a5df9f609"></div>
-   </div>
 </body>
 </html>
