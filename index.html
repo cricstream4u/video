@@ -19,7 +19,7 @@
         @media (max-width: 768px) {
             .video-container {
                 width: 100%;
-                height: 100vh; /* Full viewport height for mobile */
+                height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -28,16 +28,16 @@
             video {
                 width: 100%;
                 height: 100%;
-                object-fit: cover; /* Cover the entire viewport */
+                object-fit: cover;
             }
         }
     </style>
 </head>
 <body>
-   <center>
-    <div class="video-container">
-        <video preload="none" id="video" autoplay controls crossorigin></video>
-    </div>
+    <center>
+        <div class="video-container">
+            <video preload="none" id="video" autoplay controls crossorigin></video>
+        </div>
     </center>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -79,10 +79,12 @@
                         };
 
                         const player = new Plyr(video, defaultOptions);
+                        attachFullscreenListener(player);
                     });
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                     video.src = videoUrl;
                     const player = new Plyr(video, defaultOptions);
+                    attachFullscreenListener(player);
                 } else {
                     document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
                 }
@@ -99,6 +101,24 @@
                     }
                 });
             }
+        }
+
+        // Ensure landscape mode on fullscreen
+        function attachFullscreenListener(player) {
+            const video = player.elements.container;
+            video.addEventListener('enterfullscreen', () => {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch((err) => {
+                        console.error('Failed to lock orientation:', err.message);
+                    });
+                }
+            });
+
+            video.addEventListener('exitfullscreen', () => {
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            });
         }
 
         if (confirm("Join Our Telegram Channel @cric_stream For More Links")) {
