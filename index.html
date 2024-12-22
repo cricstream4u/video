@@ -1,130 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TG- @cric_stream</title>
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
+    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.min.js"></script>
     <style>
         .video-container {
-            width: 95%;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        video {
+            width: 100%;
             height: auto;
         }
 
-        @media (max-width: 768px) {
-            .video-container {
-                width: 100%;
+        @media (orientation: landscape) and (fullscreen) {
+            video {
+                width: 100vw;
+                height: 100vh;
+                object-fit: contain;
             }
         }
     </style>
 </head>
 <body>
-   <center>
-    <div class="video-container">
-        <video preload="none" id="video" autoplay controls crossorigin></video>
+    <div>
+        <h2 style="text-align: center; background-color: #0074d9; color: white; padding: 10px;">Custom DASH Player</h2>
     </div>
-    </center>
+    <br>
+    <div class="video-container">
+        <video id="video-player" controls crossorigin playsinline></video>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const videoUrl = urlParams.get('video');
+            const videoUrl = urlParams.get('video'); // Expect DASH MPD URL in query param "video"
 
             if (!videoUrl) {
                 document.body.innerHTML = "<h2>Video URL missing in query parameter</h2>";
-            } else {
-                const video = document.getElementById('video');
-                const defaultOptions = {
-                    controls: [
-                        'play-large',
-                        'play',
-                        'progress',
-                        'duration',
-                        'live',
-                        'mute',
-                        'settings',
-                        'pip',
-                        'airplay',
-                        'fullscreen',
-                    ],
-                    settings: ['quality'],
+                return;
+            }
+
+            const videoElement = document.getElementById('video-player');
+            
+            // Initialize Dash.js Player
+            const dashPlayer = dashjs.MediaPlayer().create();
+            dashPlayer.initialize(videoElement, videoUrl, true);
+
+            // Attach Plyr for Modern Interface
+            const player = new Plyr(videoElement, {
+                controls: [
+                    'play-large',
+                    'play',
+                    'progress',
+                    'current-time',
+                    'mute',
+                    'volume',
+                    'settings',
+                    'pip',
+                    'fullscreen',
+                    
+                ],
+                settings: ['quality'], // Enable settings for customizations
+            });
+
+            // Quality Selection Integration
+            dashPlayer.updateSettings({
+                streaming: {
+                    abr: {
+                        autoSwitchBitrate: true,
+                    },
+                },
+            });
+
+            dashPlayer.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
+                const availableQualities = dashPlayer.getBitrateInfoListFor('video').map(q => q.height);
+                availableQualities.unshift(0); // Add "Auto" option
+
+                player.config.quality = {
+                    default: 0,
+                    options: availableQualities,
+                    forced: true,
+                    onChange: (newQuality) => {
+                        if (newQuality === 0) {
+                            dashPlayer.updateSettings({
+                                streaming: {
+                                    abr: {
+                                        autoSwitchBitrate: true,
+                                    },
+                                },
+                            });
+                        } else {
+                            const bitrateIndex = dashPlayer.getBitrateInfoListFor('video').findIndex(q => q.height === newQuality);
+                            if (bitrateIndex !== -1) {
+                                dashPlayer.updateSettings({
+                                    streaming: {
+                                        abr: {
+                                            autoSwitchBitrate: false,
+                                        },
+                                    },
+                                });
+                                dashPlayer.setQualityFor('video', bitrateIndex);
+                            }
+                        }
+                    },
                 };
 
-                if (Hls.isSupported()) {
-                    const hls = new Hls();
-                    hls.loadSource(videoUrl);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        const availableQualities = hls.levels.map(level => level.height);
-
-                        defaultOptions.quality = {
-                            default: 0,
-                            options: availableQualities,
-                            forced: true,
-                            onChange: (newQuality) => updateQuality(hls, newQuality),
-                        };
-
-                        const player = new Plyr(video, defaultOptions);
-
-                        // Add fullscreen landscape orientation
-                        addFullscreenOrientationHandler(player);
-                    });
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = videoUrl;
-                    const player = new Plyr(video, defaultOptions);
-
-                    // Add fullscreen landscape orientation
-                    addFullscreenOrientationHandler(player);
-                } else {
-                    document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
-                }
-            }
-        });
-
-        function updateQuality(hls, newQuality) {
-            if (newQuality === 0) {
-                hls.currentLevel = -1; // Auto
-            } else {
-                hls.levels.forEach((level, index) => {
-                    if (level.height === newQuality) {
-                        hls.currentLevel = index;
-                    }
+                // Update Plyr's settings menu
+                player.on('ready', () => {
+                    player.settings.set('quality', availableQualities);
                 });
-            }
-        }
-
-        function addFullscreenOrientationHandler(player) {
-            player.on('enterfullscreen', () => {
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(err => {
-                        console.warn('Screen orientation lock failed:', err);
-                    });
-                }
             });
 
-            player.on('exitfullscreen', () => {
-                if (screen.orientation && screen.orientation.unlock) {
-                    screen.orientation.unlock();
-                }
+            // Error Handling
+            dashPlayer.on(dashjs.MediaPlayer.events.ERROR, (e) => {
+                console.error('DASH.js error:', e);
+                alert('An error occurred while playing the video.');
             });
-        }
-
-        if (confirm("Join Our Telegram Channel @cric_stream For More Links")) {
-            window.location.href = "https://t.me/cric_stream";
-        }
+        });
+        
     </script>
 
-    <!-- BEGIN: Powered by Supercounters.com -->
-    <center>
-        <script type="text/javascript" src="//widget.supercounters.com/ssl/online_t.js"></script>
-        <script type="text/javascript">sc_online_t(1703448,"Watching....","#1d1d21");</script>
-        <br>
-        <noscript><a href="https://www.supercounters.com/"></a></noscript>
-    </center>
-    <!-- END: Powered by Supercounters.com -->
-
-    <div style="background-color: #0074d9; text-align: center; padding: 10px;">
+    <div style="background-color: #0074d9; text-align: center; padding: 10px; margin-top: 20px;">
         <a href="https://telegram.me/cric_stream" target="_blank">
-            <button id="joinTelegramButton" style="background-color: #fff; color: #0074d9; border: 2px solid #0074d9; padding: 5px 10px;">Join Telegram</button>
+            <button id="joinTelegramButton">Join Telegram</button>
         </a>
     </div>
 </body>
