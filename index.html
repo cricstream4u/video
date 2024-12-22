@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TG- @cric_stream</title>
-    // mpd Link Player
+    //Custom DASH Player with Buffering Animation
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.min.js"></script>
     <style>
         .video-container {
+            position: relative;
             width: 100%;
             max-width: 100%;
             margin: 0 auto;
@@ -28,14 +29,63 @@
                 object-fit: contain;
             }
         }
+
+        /* Buffering animation */
+        .buffering {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .buffering span {
+            margin: 0 5px;
+            animation: blink 1.5s infinite;
+        }
+
+        .buffering span:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .buffering span:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* Show buffering animation */
+        .buffering.active {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <div>
-        <h2 style="text-align: center; background-color: #0074d9; color: white; padding: 10px;">Custom DASH Player</h2>
+        <h2 style="text-align: center; background-color: #0074d9; color: white; padding: 10px;">Custom DASH Player with Buffering Animation</h2>
     </div>
     <br>
     <div class="video-container">
+        <div class="buffering" id="buffering-animation">
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+        </div>
         <video id="video-player" controls crossorigin playsinline></video>
     </div>
 
@@ -50,7 +100,18 @@
             }
 
             const videoElement = document.getElementById('video-player');
+            const bufferingAnimation = document.getElementById('buffering-animation');
             
+            // Show buffering animation
+            const showBuffering = () => {
+                bufferingAnimation.classList.add('active');
+            };
+
+            // Hide buffering animation
+            const hideBuffering = () => {
+                bufferingAnimation.classList.remove('active');
+            };
+
             // Initialize Dash.js Player
             const dashPlayer = dashjs.MediaPlayer().create();
             dashPlayer.initialize(videoElement, videoUrl, true);
@@ -72,61 +133,19 @@
                 settings: ['quality'], // Enable settings for customizations
             });
 
-            // Quality Selection Integration
-            dashPlayer.updateSettings({
-                streaming: {
-                    abr: {
-                        autoSwitchBitrate: true,
-                    },
-                },
-            });
-
-            dashPlayer.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, () => {
-                const availableQualities = dashPlayer.getBitrateInfoListFor('video').map(q => q.height);
-                availableQualities.unshift(0); // Add "Auto" option
-
-                player.config.quality = {
-                    default: 0,
-                    options: availableQualities,
-                    forced: true,
-                    onChange: (newQuality) => {
-                        if (newQuality === 0) {
-                            dashPlayer.updateSettings({
-                                streaming: {
-                                    abr: {
-                                        autoSwitchBitrate: true,
-                                    },
-                                },
-                            });
-                        } else {
-                            const bitrateIndex = dashPlayer.getBitrateInfoListFor('video').findIndex(q => q.height === newQuality);
-                            if (bitrateIndex !== -1) {
-                                dashPlayer.updateSettings({
-                                    streaming: {
-                                        abr: {
-                                            autoSwitchBitrate: false,
-                                        },
-                                    },
-                                });
-                                dashPlayer.setQualityFor('video', bitrateIndex);
-                            }
-                        }
-                    },
-                };
-
-                // Update Plyr's settings menu
-                player.on('ready', () => {
-                    player.settings.set('quality', availableQualities);
-                });
-            });
+            // Add buffering detection
+            videoElement.addEventListener('waiting', showBuffering);
+            videoElement.addEventListener('playing', hideBuffering);
+            videoElement.addEventListener('canplay', hideBuffering);
+            videoElement.addEventListener('canplaythrough', hideBuffering);
 
             // Error Handling
             dashPlayer.on(dashjs.MediaPlayer.events.ERROR, (e) => {
                 console.error('DASH.js error:', e);
                 alert('An error occurred while playing the video.');
+                hideBuffering();
             });
         });
-        
     </script>
 
     <div style="background-color: #0074d9; text-align: center; padding: 10px; margin-top: 20px;">
