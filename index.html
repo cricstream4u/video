@@ -9,12 +9,18 @@
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.min.js"></script>
     <style>
-        .video-container {
-            position: relative;
-            width: 100%;
+       .video-container {
+            width: 95%;
+            height: auto;
             max-width: 100%;
             margin: 0 auto;
-            text-align: center;
+        }
+
+        /* Ensure video is properly centered on mobile devices */
+        @media (max-width: 768px) {
+            .video-container {
+                width: 100%;
+            }
         }
 
         video {
