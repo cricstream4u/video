@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
+    <title>TG- @cric_stream</title>
     <!-- Plyr CSS -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -28,23 +28,28 @@
 
         const video = document.getElementById('video');
 
-        if (videoUrl.endsWith('.m3u8')) {
-            // If the URL is an HLS stream
-            if (Hls.isSupported()) {
-                const hls = new Hls();
-                hls.loadSource(videoUrl);  // Load HLS stream URL
-                hls.attachMedia(video);
+        // Check if HLS.js is supported
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(videoUrl);  // Load HLS stream URL
+            hls.attachMedia(video);
 
-                const player = new Plyr(video);  // Initialize Plyr player
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Safari and other browsers that support HLS natively
-                video.src = videoUrl;
-                const player = new Plyr(video);  // Initialize Plyr player
-            } else {
-                document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
-            }
+            // Handle errors
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                console.error('HLS.js Error:', data);
+                document.body.innerHTML = "<h2>There was an error loading the stream. Please try again later.</h2>";
+            });
+
+            // Initialize Plyr after HLS stream is attached
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                const player = new Plyr(video);
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // If the browser supports HLS natively (e.g., Safari)
+            video.src = videoUrl;
+            const player = new Plyr(video);
         } else {
-            document.body.innerHTML = "<h2>Unsupported video format</h2>";
+            document.body.innerHTML = "<h2>Your browser does not support HLS playback</h2>";
         }
     });
 
