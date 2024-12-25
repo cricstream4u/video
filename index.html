@@ -3,157 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG- @cric_stream</title>
-    <!---Custom DASH Player with Buffering Animation --->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
-    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
-    <script src="https://cdn.plyr.io/3.7.8/plyr.min.js"></script>
-    <style>
-       .video-container {
-            width: 95%;
-            height: auto;
-            max-width: 100%;
-            margin: 0 auto;
-        }
-
-        /* Ensure video is properly centered on mobile devices */
-        @media (max-width: 768px) {
-            .video-container {
-                width: 100%;
-            }
-        }
-
-        video {
-            width: 100%;
-            height: auto;
-        }
-
-        @media (orientation: landscape) and (fullscreen) {
-            video {
-                width: 100vw;
-                height: 100vh;
-                object-fit: contain;
-            }
-        }
-
-        /* Buffering animation */
-        .buffering {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .buffering span {
-            margin: 0 5px;
-            animation: blink 1.5s infinite;
-        }
-
-        .buffering span:nth-child(2) {
-            animation-delay: 0.3s;
-        }
-
-        .buffering span:nth-child(3) {
-            animation-delay: 0.6s;
-        }
-
-        @keyframes blink {
-            0%, 100% {
-                opacity: 0.3;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-
-        /* Show buffering animation */
-        .buffering.active {
-            visibility: visible;
-            opacity: 1;
-        }
-    </style>
+    <title>Video Player</title>
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 </head>
 <body>
-  
-    <div class="video-container">
-        <div class="buffering" id="buffering-animation">
-            <span>.</span>
-            <span>.</span>
-            <span>.</span>
-        </div>
-        <video id="video-player" controls crossorigin playsinline poster="CRIC stream Thumbnail .jpg"></video>
+    <div style="text-align: center; margin-top: 20px;">
+        <video id="video" preload="none" autoplay controls crossorigin>
+            Your browser does not support the video tag.
+        </video>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const videoUrl = urlParams.get('video'); // Expect DASH MPD URL in query param "video"
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoUrl = urlParams.get('video'); // Get the video URL from query params
 
-            if (!videoUrl) {
-                document.body.innerHTML = "<h2>Video URL missing in query parameter</h2>";
-                return;
-            }
-
-            const videoElement = document.getElementById('video-player');
-            const bufferingAnimation = document.getElementById('buffering-animation');
-            
-            // Show buffering animation
-            const showBuffering = () => {
-                bufferingAnimation.classList.add('active');
-            };
-
-            // Hide buffering animation
-            const hideBuffering = () => {
-                bufferingAnimation.classList.remove('active');
-            };
-
-            // Initialize Dash.js Player
-            const dashPlayer = dashjs.MediaPlayer().create();
-            dashPlayer.initialize(videoElement, videoUrl, true);
-
-            // Attach Plyr for Modern Interface
-            const player = new Plyr(videoElement, {
-                controls: [
-                    'play-large',
-                    'play',
-                    'progress',
-                    'current-time',
-                    'mute',
-                    'settings',
-                    'pip',
-                    'fullscreen',
-                    
-                ],
-                settings: ['quality'], // Enable settings for customizations
-            });
-
-            // Add buffering detection
-            videoElement.addEventListener('waiting', showBuffering);
-            videoElement.addEventListener('playing', hideBuffering);
-            videoElement.addEventListener('canplay', hideBuffering);
-            videoElement.addEventListener('canplaythrough', hideBuffering);
-
-            // Error Handling
-            dashPlayer.on(dashjs.MediaPlayer.events.ERROR, (e) => {
-                console.error('DASH.js error:', e);
-                alert('An error occurred while playing the video.');
-                hideBuffering();
-            });
-        });
-         if (confirm("Join Our Telegram Channel @cric_stream For More Links")) {
-            window.location.href = "https://t.me/cric_stream";
+        if (!videoUrl) {
+            document.body.innerHTML = "<h2>Video URL missing in query parameter</h2>";
+            return; // Exit if no URL is provided
         }
+
+        const video = document.getElementById('video');
+
+        if (videoUrl.endsWith('.m3u8')) {
+            // If the URL is an HLS stream
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(videoUrl);  // Load HLS stream URL
+                hls.attachMedia(video);
+
+                const player = new Plyr(video);  // Initialize Plyr player
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari and other browsers that support HLS natively
+                video.src = videoUrl;
+                const player = new Plyr(video);  // Initialize Plyr player
+            } else {
+                document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
+            }
+        } else {
+            document.body.innerHTML = "<h2>Unsupported video format</h2>";
+        }
+    });
+
+         if (confirm("Join Our Telegram Channel @cric_stream For More Links")) {
+        window.location.href = "https://t.me/cric_stream";
+    }
     </script>
 
-    <div style="background-color: #0074d9; text-align: center; padding: 10px; margin-top: 20px;">
+       <!-- Powered by Supercounters -->
+    <center>
+        <script type="text/javascript" src="//widget.supercounters.com/ssl/online_t.js"></script>
+        <script type="text/javascript">sc_online_t(1703448, "Watching....", "#1d1d21");</script>
+        <br>
+        <noscript><a href="https://www.supercounters.com/"></a></noscript>
+    </center>
+    <!-- END: Powered by Supercounters -->
+
+    <div style="background-color: #0074d9; text-align: center; padding: 10px;">
         <a href="https://telegram.me/cric_stream" target="_blank">
             <button id="joinTelegramButton">Join Telegram</button>
         </a>
