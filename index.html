@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
-    <!-- Plyr CSS -->
+    <title>Simple Video Player</title>
+    <!-- HLS and DASH Player with Plyr -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 </head>
 <body>
-    <div style="text-align: center; margin-top: 20px;">
-        <video id="video" preload="none" autoplay controls crossorigin>
-            Your browser does not support the video tag.
-        </video>
+    <div class="video-container">
+        <video preload="none" id="video" autoplay controls crossorigin></video>
     </div>
 
     <script>
@@ -27,31 +26,52 @@
         }
 
         const video = document.getElementById('video');
+        const defaultOptions = {
+            controls: [
+                'play-large',
+                'play',
+                'progress',
+                'duration',
+                'mute',
+                'settings',
+                'fullscreen',
+            ],
+        };
 
-        // Check if HLS.js is supported
-        if (Hls.isSupported()) {
-            const hls = new Hls();
-            
-            // Handle any errors in HLS.js loading the stream
-            hls.on(Hls.Events.ERROR, function (event, data) {
-                console.error('HLS.js Error:', event, data);
-                document.body.innerHTML = "<h2>There was an error loading the stream. Please try again later.</h2>";
+        if (videoUrl.endsWith('.m3u8')) {
+            // If the URL is an HLS stream
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(videoUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    new Plyr(video, defaultOptions);
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS.js Error:', data);
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari and other browsers that support HLS natively
+                video.src = videoUrl;
+                new Plyr(video, defaultOptions);
+            } else {
+                document.body.innerHTML = "<h2>HLS not supported on your browser</h2>";
+            }
+        } else if (videoUrl.endsWith('.mpd')) {
+            // If the URL is a DASH stream
+            const dash = dashjs.MediaPlayer().create();
+            dash.initialize(video, videoUrl, true);
+            dash.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, function () {
+                new Plyr(video, defaultOptions);
             });
 
-            hls.loadSource(videoUrl);  // Load HLS stream URL
-            hls.attachMedia(video);
-
-            // Initialize Plyr after HLS stream is attached
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                const player = new Plyr(video);
+            dash.on(dashjs.MediaPlayer.events.ERROR, function (e) {
+                console.error('DASH.js Error:', e);
             });
-
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // If the browser supports HLS natively (e.g., Safari)
-            video.src = videoUrl;
-            const player = new Plyr(video);
         } else {
-            document.body.innerHTML = "<h2>Your browser does not support HLS playback</h2>";
+            document.body.innerHTML = "<h2>Unsupported video format</h2>";
         }
     });
     </script>
