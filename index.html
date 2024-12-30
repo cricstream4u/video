@@ -27,6 +27,24 @@
         text-decoration: none;
         font-weight: bold;
       }
+
+       /* For screens larger than 768px (laptops, desktops) */
+      @media (min-width: 768px) {
+        #live-label {
+          font-size: 8px;
+          padding: 5px 10px;
+        }
+      }
+
+      /* For smaller screens (mobiles) */
+      @media (max-width: 767px) {
+        #live-label {
+          font-size: 5px;
+          padding: 2px 4px;
+          top: 5px;
+          right: 5px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -103,6 +121,14 @@
       document.addEventListener('shaka-ui-load-failed', initFailed);
     </script>
 
+    <div style="margin-top: 5px;">
+      <center>
+            <script type="text/javascript" src="//widget.supercounters.com/ssl/online_t.js"></script>
+            <script type="text/javascript">sc_online_t(1703448, "Watching....", "#1d1d21");</script>
+            <br>
+            <noscript><a href="https://www.supercounters.com/"></a></noscript>
+        </center>
+    </div>
     <div style="background-color: #0074d9; text-align: center; padding: 10px;">
       <a href="https://telegram.me/cric_stream" target="_blank">
         <button id="joinTelegramButton">Join Telegram</button>
